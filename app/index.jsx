@@ -1,14 +1,11 @@
 import { 
   View, 
   Text, 
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
   TouchableWithoutFeedback,
-  Keyboard, 
+  Keyboard,
 } from "react-native";
-import LogoHeader from "/Users/pavelhamawand/barber-app/app/components/LogoHeader.jsx";
-import InputField from "/Users/pavelhamawand/barber-app/app/components/InputField.jsx";
+import LogoHeader from "@/app/components/LogoHeader.jsx";
+import InputField from "@/app/components/InputField.jsx";
 import PrimaryButton from "@/app/components/PrimaryButton.jsx";
 import { useState } from "react";
 import { useRouter } from "expo-router";
@@ -28,33 +25,47 @@ export default function Index() {
     router.replace("/(tabs)"); 
   };
 
+  const handleSignUp = () => {
+    // Navigera till registreringssidan
+    router.push("/register");
+  };
+
   return (
-   
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> 
-        <SafeAreaView
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "black",
+        }}
+      >
+        <LogoHeader />
+        <InputField
+          placeholder="E-post"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <InputField
+          placeholder="Lösenord"
+          secure
+          value={password}
+          onChangeText={setPassword}
+        />
+        
+        <Text
+          onPress={handleSignUp}
           style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "black",
-            
+            color: "grey",
+            marginTop: 10,
+            fontSize: 16,
           }}
         >
-          <LogoHeader />
-          <InputField
-            placeholder="E-post"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <InputField
-            placeholder="Lösenord"
-            secure
-            value={password}
-            onChangeText={setPassword}
-          />
-          <PrimaryButton title="Logga in" onPress={handleLogin} />
-        </SafeAreaView>
-      </TouchableWithoutFeedback>
-    
+          Ny användare? Skapa konto
+        </Text>
+
+        <PrimaryButton title="Logga in" onPress={handleLogin} />
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }

@@ -1,4 +1,3 @@
-// app.config.js
 import 'dotenv/config';
 
 export default {
@@ -41,8 +40,8 @@ export default {
       typedRoutes: true
     },
     extra: {
-      expoPublicSupabaseUrl: process.env.SUPABASE_URL,
-      expoPublicSupabaseAnonKey: process.env.SUPABASE_ANON_KEY
+      expoPublicSupabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      expoPublicSupabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     }
   }
 };
