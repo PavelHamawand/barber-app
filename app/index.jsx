@@ -46,7 +46,7 @@ export default function Index() {
         await AsyncStorage.setItem("barber", JSON.stringify(barber));
   
         console.log("Inloggad som:", barber.name);
-        router.replace("/(tabs)/home");
+        router.replace("/(tabs)/schedule");
       }
     }
   
