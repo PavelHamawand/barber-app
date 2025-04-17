@@ -53,10 +53,6 @@ export default function Schedule() {
         console.error("Error fetching bookings:", error);
       } else {
         setBookings(data);
-        console.log("barberId:", barberId);
-        console.log("selectedDate:", selectedDate);
-        console.log("formattedDate:", formattedDate);
-        console.log("Fetched data:", data);
       }
   
       setLoading(false);

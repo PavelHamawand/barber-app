@@ -6,7 +6,7 @@ const blueShades = ["#0f4e99", "#1a66cc", "#2f80ed", "#145c9e"];
 
 export default function DaySchedule({ bookings, selectedDate }) {
   const timeSlots = Array.from({ length: 24 }, (_, i) => {
-    const hour = 8 + Math.floor(i / 2);
+    const hour = 12 + Math.floor(i / 2);
     const minutes = i % 2 === 0 ? "00" : "30";
     return `${hour}:${minutes}`;
   });
