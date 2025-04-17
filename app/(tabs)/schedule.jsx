@@ -40,10 +40,14 @@ export default function Schedule() {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
   
       const { data, error } = await supabase
-        .from("Bookings")
-        .select("customer_name, time_slot, service_id" )
-        .eq("barber_id", barberId)  // Endast den inloggade barberarens bokningar
-        .eq("date", formattedDate); // Matcha exakt på datum
+  .from("Bookings")
+  .select(`
+    customer_name,
+    time_slot,
+    service:service_id ( name )
+  `)
+  .eq("barber_id", barberId)
+  .eq("date", formattedDate);
   
       if (error) {
         console.error("Error fetching bookings:", error);
