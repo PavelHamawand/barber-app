@@ -33,14 +33,14 @@ export default function DaySchedule({ bookings, selectedDate }) {
               height: 80,
               flexDirection: "row",
               alignItems: "flex-start",
-              paddingTop: 4,
+              paddingTop: 3,
               paddingLeft: 10,
               position: "relative",
             }}
           >
             {/* Tid */}
             <View style={{ width: 50, alignItems: "flex-end", paddingRight: 5 }}>
-              <Text style={{ color: "gray", fontSize: 12 }}>{slot}</Text>
+              <Text style={{ color: "gray", fontSize: 12, fontWeight: "bold" }}>{slot}</Text>
             </View>
 
             {/* Horisontell linje */}
@@ -49,7 +49,7 @@ export default function DaySchedule({ bookings, selectedDate }) {
                 height: 1,
                 backgroundColor: "#333",
                 flex: 1,
-                marginTop: 6,
+                marginTop: 7,
               }}
             />
 
