@@ -12,7 +12,6 @@ export default function Availability() {
   const [loading, setLoading] = useState(true);
   const [barberId, setBarberId] = useState(null);
 
-  // Hämtar barberId från AsyncStorage
   useEffect(() => {
     const fetchBarberId = async () => {
       try {
@@ -29,13 +28,21 @@ export default function Availability() {
     fetchBarberId();
   }, []);
 
-  // Hämtar tillgänglighet för vald dag och frisör
   useEffect(() => {
     if (!barberId) return;
 
     const fetchAvailability = async () => {
       setLoading(true);
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
+
+      const savedAvailability = await AsyncStorage.getItem(`availability-${formattedDate}`);
+      if (savedAvailability) {
+        const parsed = JSON.parse(savedAvailability);
+        console.log("🧠 Från AsyncStorage:", parsed);
+        setAvailability(parsed);
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("availability")
@@ -47,10 +54,12 @@ export default function Availability() {
         console.error("Fel vid hämtning av availability:", error);
       } else {
         const availabilityData = data.reduce((acc, curr) => {
-          acc[curr.timeslot] = curr.available;
+          acc[curr.time_slot] = curr.available;
           return acc;
         }, {});
+        console.log("🧠 Från Supabase:", availabilityData);
         setAvailability(availabilityData);
+        await AsyncStorage.setItem(`availability-${formattedDate}`, JSON.stringify(availabilityData));
       }
 
       setLoading(false);
@@ -59,17 +68,13 @@ export default function Availability() {
     fetchAvailability();
   }, [selectedDate, barberId]);
 
-  // Toggle availability (blockera eller gör en tid tillgänglig)
   const handleToggle = async (timeSlot) => {
     const isCurrentlyAvailable = availability[timeSlot] ?? false;
     const newAvailable = !isCurrentlyAvailable;
-  
-    // Uppdatera state direkt för bättre respons i UI
-    setAvailability((prev) => ({
-      ...prev,
-      [timeSlot]: newAvailable,
-    }));
-  
+
+    const updatedAvailability = { ...availability, [timeSlot]: newAvailable };
+    setAvailability(updatedAvailability);
+
     const { error } = await supabase
       .from("availability")
       .upsert(
@@ -81,12 +86,14 @@ export default function Availability() {
             available: newAvailable,
           },
         ],
-        { onConflict: ['barber_id', 'date', 'time_slot'] } // viktigt!
+        { onConflict: ['barber_id', 'date', 'time_slot'] }
       );
-  
+
     if (error) {
       console.error("Fel vid upsert:", error);
     }
+
+    await AsyncStorage.setItem(`availability-${format(selectedDate, "yyyy-MM-dd")}`, JSON.stringify(updatedAvailability));
   };
 
   return (

@@ -2,9 +2,10 @@ import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 
 export default function DayAvailability({ availability = {}, selectedDate, onToggle }) {
   const timeSlots = Array.from({ length: 24 }, (_, i) => {
-    const hour = 8 + Math.floor(i / 2);
+    const hour = 12 + Math.floor(i / 2);
+    const paddedHour = hour.toString().padStart(2, "0");
     const minutes = i % 2 === 0 ? "00" : "30";
-    return `${hour}:${minutes}`;
+    return `${paddedHour}:${minutes}`;
   });
 
   return (
