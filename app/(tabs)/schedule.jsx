@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase.js";
 import { format } from "date-fns";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons"; // För plusikonen
-import BookingModal from "@/app/components/BookingModal.jsx"; // Skapa denna komponent
+import BookingModal from "@/app/components/BookingModal/BookingModal.jsx"; // Skapa denna komponent
 
 export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState(new Date());

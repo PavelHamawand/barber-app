@@ -1,36 +1,23 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  Modal,
-  Pressable,
-  Switch,
-} from "react-native";
+import { View, Text, TouchableOpacity, Switch, TextInput } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import TimeSelector from "@/app/components/BookingModal/TimeSelector.jsx";
+import ServiceSelector from "@/app/components/BookingModal/ServiceSelector.jsx";
+import CustomerSelector from "@/app/components/BookingModal/CustomerSelector.jsx";
 
 export default function BookingModal({ date, onClose, barberId, onBookingAdded }) {
   const [customers, setCustomers] = useState([]);
   const [services, setServices] = useState([]);
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [search, setSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [time, setTime] = useState("12:00");
+  const [time, setTime] = useState(null);
   const [showTimes, setShowTimes] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [showServices, setShowServices] = useState(false);
   const [recurring, setRecurring] = useState(false);
-  const [availableTimes, setAvailableTimes] = useState([]);
+  const [bookedTimes, setBookedTimes] = useState([]);
 
-  const times = Array.from({ length: 20 }, (_, i) => {
-    const hour = 12 + Math.floor(i / 2);
-    const minute = i % 2 === 0 ? "00" : "30";
-    return `${hour}:${minute}`;
-  });
-
+  // Hämta kunder och tjänster
   useEffect(() => {
     const fetchData = async () => {
       const { data: customerData } = await supabase.from("Customers").select("*");
@@ -42,19 +29,25 @@ export default function BookingModal({ date, onClose, barberId, onBookingAdded }
     fetchData();
   }, []);
 
-  const handleSearch = (text) => {
-    setSearch(text);
-    const filtered = customers.filter((c) =>
-      c.name.toLowerCase().includes(text.toLowerCase())
-    );
-    setFilteredCustomers(filtered);
-  };
+  // Hämta bokade tider för barberaren och datumet
+  useEffect(() => {
+    const formattedDate = new Date(date).toISOString().split("T")[0]; 
+    const fetchBookedTimes = async () => {
+      const { data: bookingsData } = await supabase
+        .from("Bookings")
+        .select("time_slot")
+        .eq("barber_id", barberId)
+        .eq("date", formattedDate);
 
-  const handleSelectCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    setSearch(customer.name);
-    setFilteredCustomers([]);
-  };
+      // Extrahera och skapa en lista med bokade tider
+      const times = bookingsData ? bookingsData.map((booking) => booking.time_slot) : [];
+      setBookedTimes(times);
+    };
+
+    if (barberId && date) {
+      fetchBookedTimes();
+    }
+  }, [barberId, date]);
 
   const handleBooking = async () => {
     if (!selectedCustomer || !time || !selectedService) return;
@@ -77,11 +70,11 @@ export default function BookingModal({ date, onClose, barberId, onBookingAdded }
     }
 
     const { error } = await supabase.from("Bookings").insert(bookings);
-    if (error) {
-      console.error("Fel vid bokning:", error);
-    } else {
+    if (!error) {
       onBookingAdded();
       onClose();
+    } else {
+      console.error("Fel vid bokning:", error);
     }
   };
 
@@ -94,86 +87,28 @@ export default function BookingModal({ date, onClose, barberId, onBookingAdded }
 
         <Text style={styles.title}>Skapa ny bokning</Text>
 
-        {/* Tid */}
-        <Pressable onPress={() => setShowTimes(!showTimes)} style={styles.input}>
-          <Text style={styles.text}>{time}</Text>
-        </Pressable>
-        {showTimes && (
-          <FlatList
-            data={times}
-            keyExtractor={(item) => item}
-            style={{ maxHeight: 150 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  setTime(item);
-                  setShowTimes(false);
-                }}
-                style={{ padding: 8 }}
-              >
-                <Text style={styles.text}>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-
-        {/* Tjänst */}
-        <Pressable onPress={() => setShowServices(!showServices)} style={styles.input}>
-          <Text style={styles.text}>
-            {selectedService ? selectedService.name : "Välj tjänst"}
-          </Text>
-        </Pressable>
-        {showServices && (
-          <FlatList
-            data={services}
-            keyExtractor={(item) => item.id}
-            style={{ maxHeight: 120 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  setSelectedService(item);
-                  setShowServices(false);
-                }}
-                style={{ paddingVertical: 6 }}
-              >
-                <Text style={styles.text}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-
-        {/* Kundsökning */}
-        <TextInput
-          value={search}
-          onChangeText={handleSearch}
-          placeholder="Sök kund..."
-          placeholderTextColor="#aaa"
-          style={styles.input}
+        <TimeSelector
+          time={time}
+          setTime={setTime}
+          show={showTimes}
+          toggle={() => setShowTimes(!showTimes)}
+          bookedTimes={bookedTimes}  // Skicka bokade tider här
         />
-        {filteredCustomers.length > 0 && (
-          <FlatList
-            data={filteredCustomers}
-            keyExtractor={(item) => item.email}
-            style={{ maxHeight: 100 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => handleSelectCustomer(item)}
-                style={{ paddingVertical: 6 }}
-              >
-                <Text style={styles.text}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
 
-        {/* Kundinfo */}
-        <TextInput
-          value={selectedCustomer?.name || ""}
-          placeholder="Namn"
-          placeholderTextColor="#aaa"
-          editable={false}
-          style={styles.input}
+        <ServiceSelector
+          services={services}
+          selectedService={selectedService}
+          show={showServices}
+          toggle={() => setShowServices(!showServices)}
+          onSelect={setSelectedService}
         />
+
+        <CustomerSelector
+          customers={customers}
+          selectedCustomer={selectedCustomer}
+          onSelect={setSelectedCustomer}
+        />
+
         <TextInput
           value={selectedCustomer?.number || ""}
           placeholder="Telefon"
@@ -189,13 +124,11 @@ export default function BookingModal({ date, onClose, barberId, onBookingAdded }
           style={[styles.input, { marginBottom: 10 }]}
         />
 
-        {/* Återkommande toggle */}
         <View style={styles.toggleRow}>
           <Switch value={recurring} onValueChange={setRecurring} />
           <Text style={styles.text}>Upprepa varje vecka (4 ggr)</Text>
         </View>
 
-        {/* Boka-knapp */}
         <TouchableOpacity onPress={handleBooking} style={styles.button}>
           <Text style={styles.buttonText}>Boka</Text>
         </TouchableOpacity>

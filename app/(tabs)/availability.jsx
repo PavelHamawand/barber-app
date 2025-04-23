@@ -38,7 +38,6 @@ export default function Availability() {
       const savedAvailability = await AsyncStorage.getItem(`availability-${formattedDate}`);
       if (savedAvailability) {
         const parsed = JSON.parse(savedAvailability);
-        console.log("🧠 Från AsyncStorage:", parsed);
         setAvailability(parsed);
         setLoading(false);
         return;
