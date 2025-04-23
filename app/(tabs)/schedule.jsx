@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
-import { View, ActivityIndicator, Text } from "react-native";
-import CalendarHeader from "@/app/components/CalendarHeader.jsx"; // Komponent för att visa månad och veckodagar
-import DaySchedule from "@/app/components/DaySchedule.jsx";     // Komponent som visar schemat för en dag
-import { supabase } from "@/lib/supabase.js";                   // Supabase-instans för API-förfrågningar
+import { View, ActivityIndicator, Text, TouchableOpacity, Modal } from "react-native";
+import CalendarHeader from "@/app/components/CalendarHeader.jsx";
+import DaySchedule from "@/app/components/DaySchedule.jsx";
+import { supabase } from "@/lib/supabase.js";
 import { format } from "date-fns";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // För att hämta sparad användardata lokalt
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons"; // För plusikonen
+import BookingModal from "@/app/components/BookingModal.jsx"; // Skapa denna komponent
 
 export default function Schedule() {
-  const [selectedDate, setSelectedDate] = useState(new Date()); // Aktuellt valt datum
-  const [bookings, setBookings] = useState([]);                 // Lista över bokningar för valt datum
-  const [loading, setLoading] = useState(true);                 // Visar laddningsstatus
-  const [barberId, setBarberId] = useState(null);               // ID för den inloggade frisören
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [barberId, setBarberId] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false); // Hanterar visning av bokningsmodal
 
-  // Hämtar barberId från AsyncStorage när komponenten laddas första gången
   useEffect(() => {
     const fetchBarberId = async () => {
       try {
-        const barber = await AsyncStorage.getItem("barber"); // Hämta sparad användardata
+        const barber = await AsyncStorage.getItem("barber");
         if (barber) {
-          const barberData = JSON.parse(barber);             // Omvandla från sträng till objekt
-          setBarberId(barberData.id);                        // Sätt barberId från datan
+          const barberData = JSON.parse(barber);
+          setBarberId(barberData.id);
         }
       } catch (error) {
         console.error("Fel vid hämtning av barber-id från AsyncStorage:", error);
@@ -29,53 +31,90 @@ export default function Schedule() {
     fetchBarberId();
   }, []);
 
-  // Hämtar bokningar för valt datum och inloggad frisör
   useEffect(() => {
     if (!barberId) return;
-  
+
     const fetchBookings = async () => {
       setLoading(true);
-  
-      // Formatera datumet som YYYY-MM-DD (det som Supabase Date-kolumn förväntar sig)
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
-  
+
       const { data, error } = await supabase
-  .from("Bookings")
-  .select(`
-    customer_name,
-    time_slot,
-    service:service_id ( name )
-  `)
-  .eq("barber_id", barberId)
-  .eq("date", formattedDate);
-  
+        .from("Bookings")
+        .select(`
+          customer_name,
+          time_slot,
+          service:service_id ( name )
+        `)
+        .eq("barber_id", barberId)
+        .eq("date", formattedDate);
+
       if (error) {
         console.error("Error fetching bookings:", error);
       } else {
         setBookings(data);
       }
-  
+
       setLoading(false);
     };
-  
+
     fetchBookings();
-  }, [selectedDate, barberId]); // Kör om datumet eller barberId ändras
+  }, [selectedDate, barberId]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "black" }}>
-      {/* Kalenderhuvud med månad och veckodagar */}
       <CalendarHeader selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
-      
-      {/* Visa laddningsindikator om laddning pågår */}
+
       {loading ? (
         <ActivityIndicator color="white" style={{ marginTop: 20 }} />
       ) : barberId ? (
-        // Visa schemat för dagen om vi har ett barberId
-        <DaySchedule bookings={bookings} />
+        <DaySchedule bookings={bookings} selectedDate={selectedDate} />
       ) : (
-        // Visa ett meddelande om användarinfo inte finns ännu
         <Text style={{ color: "white", marginTop: 20 }}>Laddar användaruppgifter...</Text>
       )}
+
+      {/* Plus-knapp */}
+      <TouchableOpacity
+        onPress={() => setModalVisible(true)}
+        style={{
+          position: "absolute",
+          bottom: 30,
+          right: 30,
+          backgroundColor: "#2f80ed",
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          justifyContent: "center",
+          alignItems: "center",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 5,
+        }}
+      >
+        <Ionicons name="add" size={30} color="white" />
+      </TouchableOpacity>
+
+      {/* Modal för bokning */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <BookingModal
+          date={selectedDate}
+          onClose={() => setModalVisible(false)}
+          barberId={barberId}
+          onBookingAdded={() => {
+            setModalVisible(false);
+            // Hämta bokningar igen
+            setTimeout(() => {
+              setBookings([]);
+            }, 300);
+          }}
+        />
+      </Modal>
     </View>
   );
-} 
+}
